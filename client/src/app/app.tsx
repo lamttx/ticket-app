@@ -1,7 +1,4 @@
-// import { useEffect, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
-// import { Ticket, User } from '@acme/shared-models';
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import styles from './app.module.css';
 import Tickets from './tickets/tickets';
@@ -38,7 +35,7 @@ const App = () => {
       <div className={styles['app']}>
         <Navbar className="bg-secondary mb-4">
           <Container>
-            <h1 className="mb-0">Ticketing App</h1>
+            <h1 className="mb-0 py-2 text-uppercase">Ticketing App</h1>
           </Container>
         </Navbar>
         <Routes>
