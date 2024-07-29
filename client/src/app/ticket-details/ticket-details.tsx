@@ -1,59 +1,71 @@
-import { useParams } from 'react-router-dom';
-import styles from './ticket-details.module.css';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Container } from 'react-bootstrap';
-import { useQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
+import { ModalAssignTicket, TicketItem } from '../components';
+import styles from './ticket-details.module.css';
 
 /* eslint-disable-next-line */
 export interface TicketDetailsProps {}
 
+const GET_TICKET_KEY = 'get_ticket_key';
+
 const fetchSingleTicket = async (id: string) => {
   const res = await fetch(`/api/tickets/${id}`).then();
-  const ticket = await res.json();
-  let assigneeName = '(No assign)';
-  if (ticket?.assigneeId) {
-    const resUser = await fetch(`/api/users/${ticket.assigneeId}`).then();
-    const user = await resUser.json();
-    assigneeName = user.name;
-  }
-  return {
-    ticket: ticket,
-    assigneeName: assigneeName,
-  };
+  return await res.json();
 };
 
 export function TicketDetails(props: TicketDetailsProps) {
+  const queryClient = useQueryClient();
   const { id } = useParams();
 
+  const [showModalAssignTicket, setShowModalAssignTicket] = useState(false);
+
   const { data: ticketData, isLoading: isLoadingTicket } = useQuery(
-    ['get_ticket_key', id],
+    [GET_TICKET_KEY, id],
     () => fetchSingleTicket(id || ''),
     {
       enabled: !!id,
     }
   );
 
+  const handleSelectedTicket = () => {
+    return handleShowModalAssignTicket();
+  };
+
+  const handleShowModalAssignTicket = () => {
+    return setShowModalAssignTicket(true);
+  };
+
+  const handleCloseModalAssignTicket = () => {
+    return setShowModalAssignTicket(false);
+  };
+
+  const handleUpdateTicketSuccess = () => {
+    queryClient.invalidateQueries([GET_TICKET_KEY]);
+  };
+
   return (
-    <Container className={styles['ticket-detail']}>
-      {isLoadingTicket ? (
-        <p>Loading ticket...</p>
-      ) : (
-        <div>
-          <h2 className="mb-4">Ticket {ticketData?.ticket.id} Details</h2>
-          <div className="mb-2">
-            <strong>Description: </strong>
-            <span>{ticketData?.ticket.description}</span>
-          </div>
-          <div className="mb-2">
-            <strong>Assign to: </strong>
-            <span>{ticketData?.assigneeName}</span>
-          </div>
-          <div className="mb-2">
-            <strong>Is completed? </strong>
-            <span>{ticketData?.ticket.completed ? 'Yes' : 'No'}</span>
-          </div>
-        </div>
-      )}
-    </Container>
+    <>
+      <Container className={styles['ticket-detail']}>
+        {isLoadingTicket ? (
+          <p>Loading ticket...</p>
+        ) : (
+          <TicketItem
+            ticket={ticketData}
+            onSelectedTicket={handleSelectedTicket}
+            onUpdateCompleteSuccess={handleUpdateTicketSuccess}
+          />
+        )}
+      </Container>
+
+      <ModalAssignTicket
+        isOpen={showModalAssignTicket}
+        ticket={ticketData}
+        onClose={handleCloseModalAssignTicket}
+        onSuccess={handleUpdateTicketSuccess}
+      />
+    </>
   );
 }
 
